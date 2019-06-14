@@ -1,0 +1,32 @@
+.diesel-android-5-1 .diesel-poppicker {
+  bottom: -300px;
+  -webkit-transition-property: bottom;
+  transition-property: bottom;
+  -webkit-transform: none;
+  transform: none;
+}
+
+.diesel-android-5-1 .diesel-poppicker.diesel-active {
+  bottom: 0px;
+  -webkit-transition-property: bottom;
+  transition-property: bottom;
+  -webkit-transform: none;
+  transform: none;
+}
+
+
+/*用于将 html body 禁止滚动条*/
+.diesel-android-5-1 .diesel-dtpicker {
+  bottom: -300px;
+  -webkit-transition-property: bottom;
+  -webkit-transform: none;
+}
+.diesel-android-5-1 .diesel-dtpicker.diesel-active {
+  bottom: 0px;
+  -webkit-transition-property: bottom;
+  -webkit-transform: none;
+}
+
+
+/*年月日时分*/
+
