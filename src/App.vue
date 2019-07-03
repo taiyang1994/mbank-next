@@ -1,10 +1,19 @@
 <template>
   <div id="app">
+    <div class="section">
+      <div @click="showCashier">点我显示收银台</div>
+    </div>
     <div class="section no-padding">
-      <div id="card1"></div>
+      <div id="card1" />
     </div>
     <div class="section">
-      <div @click="showDatePicker">显示日期picker</div>
+      <div @click="showFullDatePicker">显示年月日picker</div>
+    </div>
+    <div class="section">
+      <div @click="showMonthDatePicker">显示月日picker</div>
+    </div>
+    <div class="section">
+      <div @click="showDatePicker">显示日picker</div>
     </div>
     <div class="section">
       <div @click="showPicker">显示picker</div>
@@ -34,7 +43,9 @@
     </div>
     <div class="section">
       <div @click="showCompactLandscape=true;">简体内容弹窗(无header和footer)</div>
-      <md-landscape v-model="showCompactLandscape" compact mask-closable @close-icon-click="eventHandler" @mask-click="eventHandler" ref="dialog">
+      <md-landscape ref="dialog"
+        v-model="showCompactLandscape" compact mask-closable @close-icon-click="eventHandler" @mask-click="eventHandler"
+>
         <div slot="content" style="position: relative; height: 100%;">
           <img width="100%" src="https://gss1.bdstatic.com/9vo3dSag_xI4khGkpoWK1HF6hhy/baike/w%3D268%3Bg%3D0/sign=b372bd3285d4b31cf03c93bdbfed4042/2cf5e0fe9925bc31a5ffa7e950df8db1cb137025.jpg" alt="">
           <div class="zm-dz">100000</div>
@@ -114,12 +125,13 @@
 <script>
 import Vue from 'vue';
 import timeline from '@mand-mobile/timeline';
-import CardCell from './components/business/card-cell';
+import CardCell from './components/business/card-cell/card-cell';
 import Marquee from './components/business/marquee';
 import Landscape from '@mand-mobile/landscape';
 import Button from '@mand-mobile/button';
 import Tag from './components/business/tag';
 import picker from './components/business/picker/picker';
+import cashier from './components/business/cashier/index';
 Vue.use(Landscape);
 Vue.use(Button);
 export default {
@@ -134,11 +146,14 @@ export default {
     return {
       list: '1234567'.split(''),
       picker: null,
+      fullDatePicker: null,
+      monthDatePicker: null,
       datePicker: null,
       cascadePicker: null,
       showLandscape: false,
       showFullScreenLandscape: false,
       showCompactLandscape: false,
+      cashier: null,
       steps: [],
       stepsHorn: [
         {timeFlag: '01.07', timeFlagMsg: '购买日期'},
@@ -147,13 +162,12 @@ export default {
         {timeFlag: '06.12', timeFlagMsg: '下一起息日'},
         {timeFlag: '06.12', timeFlagMsg: '下一到期日'}
       ],
-      cubePicker: null,
       cardList: [{
         'E_ACCOUNT_TYPE': '0004',
         'E_ACCT_NO': '50000000000000668655',
         'E_ACTP_FLAG': '2',
         'E_ACCOUNT_BALANCE': '0.00',
-        'E_AVAILABLEAMOUNT': '0.00',
+        'E_AVAILABLEAMOUNT': '132,123,123.3456',
         'E_CARD_NO': '62176027080005011',
         'E_ISSUE_BRANCH': '0002',
         'E_CARD_STATE': '01',
@@ -223,6 +237,9 @@ export default {
     cardCell.$on('selected', e => {
       typeof e.callback === 'function' && e.callback();
     });
+    cardCell.$on('cancel', () => {
+      //
+    });
     cardCell.$mount('#card1');
   },
   methods: {
@@ -234,6 +251,30 @@ export default {
     },
     handlePickerConfirm(...args) {
       console.log(args);
+    },
+    showFullDatePicker() {
+      if (!this.fullDatePicker) {
+        this.fullDatePicker = new picker.DtPicker({
+          type: 'date',
+          canBePermanent: true
+        });
+      }
+      this.fullDatePicker.show(selected => {
+        alert(JSON.stringify({text: selected.text, value: selected.value}));
+        return true;
+      });
+    },
+    showMonthDatePicker() {
+      if (!this.monthDatePicker) {
+        this.monthDatePicker = new picker.DtPicker({
+          type: 'month',
+          canBePermanent: true
+        });
+      }
+      this.monthDatePicker.show(selected => {
+        alert(JSON.stringify({text: selected.text, value: selected.value}));
+        return true;
+      });
     },
     showDatePicker() {
       if (!this.datePicker) {
@@ -251,7 +292,8 @@ export default {
       if (!this.picker) {
         this.picker = new picker.PopPicker({
           layer: 2,
-          isolated: true
+          isolated: true,
+          title: '我是picker'
         });
         this.picker.setData([
           [
@@ -360,6 +402,10 @@ export default {
     },
     confirmDialog() {
       alert('点了确认升级');
+    },
+    showCashier() {
+      this.cashier = cashier.init();
+      this.cashier.show();
     }
   }
 };

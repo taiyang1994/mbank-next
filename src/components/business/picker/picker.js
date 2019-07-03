@@ -420,7 +420,7 @@ $.dom = function (str) {
 var panelBuffer = `<div class="diesel-poppicker">
   <div class="diesel-poppicker-header">
     <div class="diesel-btn diesel-poppicker-btn-cancel">取消</div>
-    <div class="diesel-btn diesel-poppicker-btn-ok">确定</div>
+    <div class="diesel-btn diesel-poppicker-btn-ok"><div class="diesel-btn-inner">确定</div></div>
     <div class="diesel-poppicker-clear"></div>
   </div>
   <div class="diesel-poppicker-body">
@@ -445,7 +445,7 @@ var PopPicker = $.PopPicker = $.Class.extend({
     self.options.buttons = self.options.buttons || ['取消', '确定'];
     self.panel = $.dom(panelBuffer)[0];
     document.body.appendChild(self.panel);
-    self.ok = self.panel.querySelector('.diesel-poppicker-btn-ok');
+    self.ok = self.panel.querySelector('.diesel-poppicker-btn-ok .diesel-btn-inner');
     self.cancel = self.panel.querySelector('.diesel-poppicker-btn-cancel');
     self.body = self.panel.querySelector('.diesel-poppicker-body');
     self.mask = $.createMask();
@@ -533,17 +533,46 @@ var PopPicker = $.PopPicker = $.Class.extend({
     });
   },
   // 显示
-  show: function (callback) {
+  show: function (callback, options) {
     var self = this;
     self.callback = callback;
-    self.mask.show();
-    document.body.classList.add($.className('poppicker-active-for-page'));
-    self.panel.classList.add($.className('active'));
-    // 处理物理返回键
-    self.__back = $.back;
-    $.back = function () {
-      self.hide();
-    };
+  
+    options = {nativeTitlePatchHeight: 44, ...options};
+    
+    if (typeof options.hideCallback === 'function') {
+      self.hideCallback = options.hideCallback;
+    }
+  
+    if (options.nativeTitlePatchHeight !== 0) {
+      options.nativeTitlePatchHeight = parseFloat(options.nativeTitlePatchHeight) + $.getStatusBarHeight();
+    }
+    if ($.isNativeTitleDocking()) {
+      options.maskOffsetTop = options.nativeTitlePatchHeight;
+    }
+    
+    function showView() {
+      $.showNativeTitlePatch(self, options.nativeTitlePatchHeight );
+      self.mask.show({offsetTop: options.maskOffsetTop});
+      document.body.classList.add($.className('poppicker-active-for-page'));
+      self.panel.classList.add($.className('active'));
+  
+      // 处理物理返回键
+      self.__back = $.back;
+      $.back = function () {
+        self.hide();
+      };
+    }
+  
+    if ($.isAndroidKeyboardShowing()) {
+      window.addEventListener('touchstart', $.preventAll, {passive: false});
+      setTimeout(function () {
+        showView();
+        window.removeEventListener('touchstart', $.preventAll);
+      }, 300);
+    }
+    else {
+      showView();
+    }
   },
   // 隐藏
   hide: function () {
@@ -551,8 +580,10 @@ var PopPicker = $.PopPicker = $.Class.extend({
     if (self.disposed) {
       return;
     }
+    typeof self.hideCallback === 'function' && self.hideCallback();
     self.panel.classList.remove($.className('active'));
     self.mask.close();
+    $.hideNativeTitlePatch(self);
     document.body.classList.remove($.className('poppicker-active-for-page'));
     // 处理物理返回键
     $.back = self.__back;
@@ -581,8 +612,8 @@ var PopPicker = $.PopPicker = $.Class.extend({
 var domBuffer = `<div class="diesel-dtpicker" data-type="datetime">
   <div class="diesel-dtpicker-header">
     <div data-id="btn-cancel" class="diesel-btn diesel-dticker-btn-cancel">取消</div>
+    <div class="diesel-btn diesel-dticker-btn-ok"><div data-id="btn-ok" class="diesel-btn-inner">确定</div></div>
     <div data-id="btn-permanent" class="diesel-btn diesel-dticker-btn-permanent">长期有效</div>
-    <div data-id="btn-ok" class="diesel-btn diesel-dticker-btn-ok">确定</div>
   </div>
   <div class="diesel-dtpicker-body">
     <div data-id="picker-y" class="diesel-picker">
@@ -1020,18 +1051,43 @@ var DtPicker = $.DtPicker = $.Class.extend({
     self.setSelectedValue(options.value);
   },
   // 显示
-  show: function (callback) {
+  show: function (callback, options) {
     var self = this;
     var ui = self.ui;
     self.callback = callback || $.noop;
-    ui.mask.show();
-    document.body.classList.add($.className('dtpicker-active-for-page'));
-    ui.picker.classList.add($.className('active'));
-    // 处理物理返回键
-    self.__back = $.back;
-    $.back = function () {
-      self.hide();
-    };
+  
+    options = {nativeTitlePatchHeight: 44, ...options};
+  
+    if (options.nativeTitlePatchHeight !== 0) {
+      options.nativeTitlePatchHeight = parseFloat(options.nativeTitlePatchHeight) + $.getStatusBarHeight();
+    }
+    if ($.isNativeTitleDocking()) {
+      options.maskOffsetTop = options.nativeTitlePatchHeight;
+    }
+  
+    function showView() {
+      $.showNativeTitlePatch(self, options.nativeTitlePatchHeight);
+      ui.mask.show({offsetTop: options.maskOffsetTop});
+      document.body.classList.add($.className('dtpicker-active-for-page'));
+      ui.picker.classList.add($.className('active'));
+      
+      // 处理物理返回键
+      self.__back = $.back;
+      $.back = function () {
+        self.hide();
+      };
+    }
+  
+    if ($.isAndroidKeyboardShowing()) {
+      window.addEventListener('touchstart', $.preventAll, {passive: false});
+      setTimeout(function () {
+        showView();
+        window.removeEventListener('touchstart', $.preventAll);
+      }, 300);
+    }
+    else {
+      showView();
+    }
   },
   hide: function () {
     var self = this;
@@ -1041,6 +1097,7 @@ var DtPicker = $.DtPicker = $.Class.extend({
     var ui = self.ui;
     ui.picker.classList.remove($.className('active'));
     ui.mask.close();
+    $.hideNativeTitlePatch(self);
     document.body.classList.remove($.className('dtpicker-active-for-page'));
     // 处理物理返回键
     $.back = self.__back;

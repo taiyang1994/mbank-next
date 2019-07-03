@@ -1,5 +1,5 @@
 <template>
-  <div id="accountBox" :class="['card-cell', {'single-line': singleLineLayout, interactive: isSwitchable}]"
+  <div id="accountBox" :class="['card-cell', {'single-line': singleLineLayout, interactive: switchable}]"
     @click="showPicker">
     <div class="card-cell-logo">
       <template v-if="selectedCard.bankLogoSrc">
@@ -15,8 +15,8 @@
         <div class="content-row">
           <div class="content-cell">{{accountTitle}}</div>
           <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardType | cardTypeText}}
-            </span> 尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
+            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
+            </span>&nbsp;尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
           </div>
         </div>
         <div class="content-row">
@@ -31,7 +31,10 @@
             <div class="content-cell">{{isAvailableBalanceView ? availableBalanceText : balanceText}}</div>
             <div class="content-cell">
               <span id="accountBalance" class="card-cell-amount">
-                {{isAvailableBalanceView ? selectedCard.availableBalance : selectedCard.balance | formatNumber}}
+                {{(isAvailableBalanceView
+                    ? selectedCard.availableBalance
+                    : selectedCard.balance
+                  ) | formatNumber(2, '--')}}
               </span><span>{{selectedCard.unit || defaultAmoutUnit}}</span>
             </div>
           </template>
@@ -41,7 +44,7 @@
       <!--layout 2-->
       <template v-if="layout === 'compact-display'">
         <div class="content-row"><div class="content-cell">
-          <span id="bankName">{{selectedCard.cardType | cardTypeText}}</span>
+          <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}</span>
         </div></div>
         <div class="content-row"><div class="content-cell">{{selectedCard.cardNo | cardNumberMask}}</div></div>
       </template>
@@ -51,7 +54,7 @@
         <div class="content-row"><div class="content-cell">{{actionTitle}}</div></div>
         <div class="content-row">
           <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardType | cardTypeText}}
+            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
             </span> 尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
           </div>
         </div>
@@ -62,7 +65,7 @@
         <div class="content-row spacing-between">
           <div class="content-cell">
             {{selectedCard.bankName || defaultBankName}}<span id="bankName">
-              {{selectedCard.cardType | cardTypeText}}
+              {{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
           </span>
           </div>
           <div class="content-cell">
@@ -75,7 +78,7 @@
       <template v-if="layout === 'simple-display'">
         <div class="content-row spacing-between">
           <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardType | cardTypeText}}</span>
+            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}</span>
           </div>
           <div class="content-cell">
             {{selectedCard.cardNo | cardNumberMask}}
@@ -87,13 +90,13 @@
       <template v-if="layout === 'mini'">
         <div class="content-row">
           <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardType | cardTypeText}}
+            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
             </span> 尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
           </div>
         </div>
       </template>
     </div>
-    <div v-if="isSwitchable" class="card-cell-arrow">
+    <div v-if="switchable" class="card-cell-arrow">
       <md-icon name="arrow-right" size="xs" />
     </div>
   </div>
@@ -102,9 +105,9 @@
 <script>
 import Vue from 'vue';
 import MdIcon from '@mand-mobile/icon/index';
-import Picker from './picker/picker';
-import Marquee from './marquee';
-import filters from '../../filters';
+import Picker from '../picker/picker';
+import Marquee from '../marquee';
+import filters from '../../../filters';
 
 Object.entries(filters).forEach(([key, filter]) => {
   Vue.filter(key, filter);
@@ -127,9 +130,15 @@ export default {
     },
 
     // 是否可切卡
-    isSwitchable: {
+    switchable: {
       type: Boolean,
       default: true
+    },
+
+    // 切卡选中时只fire事件不选中
+    pendingSelection: {
+      type: Boolean,
+      default: false
     },
 
     /**
@@ -181,7 +190,7 @@ export default {
     // 余额显示为可用余额，默认账户余额
     isAvailableBalanceView: {
       type: Boolean,
-      default: false
+      default: true
     },
 
     // 资金流入时使用，不显示卡相关金额，显示外部传入金额
@@ -245,6 +254,12 @@ export default {
     selectedCardNo: {
       type: String,
       default: ''
+    },
+
+    // picker压屏背景原生头高度
+    pickerOptions: {
+      type: Object,
+      default: Object
     }
   },
   data() {
@@ -272,7 +287,7 @@ export default {
   },
   methods: {
     showPicker() {
-      if (!this.isSwitchable) {
+      if (!this.switchable) {
         return;
       }
       if (!this.picker) {
@@ -285,22 +300,41 @@ export default {
         );
         this.picker.setSelectedValues([this.cardNo]);
       }
+      this.$emit('select');
       this.picker.show(selected => {
         const card = this.list.find(card => (card.cardNo === selected[0].value));
-        this.$emit('selected', {
-          payload: card,
-          callback: () => {
+        if (!this.pendingSelection) {
+          this.cardNo = selected[0].value;
+        }
+        const data = {
+          payload: card
+        };
+        if (this.pendingSelection) {
+          data.callback = () => {
             this.cardNo = selected[0].value;
-          }
-        });
+          };
+        }
+        this.$emit('selected', data);
+      }, {
+        ...this.pickerOptions,
+        hideCallback: () => {
+          this.$emit('cancel');
+        }
       });
+    },
+    setAvailableBalance(cardNo, amount) {
+      const index = this.list.findIndex(card => (card.cardNo === cardNo));
+      this.$set(this.list, index, {...this.list[index], availableBalance: amount});
+    },
+    getCardTypeText(cardType) {
+      return filters.cardTypeText(cardType);
     }
   }
 };
 </script>
 
 <style scoped lang="stylus">
-  @require "../theme.variables.styl"
+  @require "../../theme.variables.styl"
   .card-cell
     color #333
     font-size 16px

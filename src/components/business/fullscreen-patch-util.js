@@ -60,17 +60,27 @@ export default {
 
   webviewSwipeSwitcher: {
     popGesture: '',
+    muiBackFunc: new Function(),
     start() {
       const webview = window.plus.webview.currentWebview();
       this.popGesture = webview.getStyle().popGesture;
       webview.setStyle({
         popGesture: 'none'
       });
+
+      if (window.mui) {
+        this.muiBackFunc = window.mui.back;
+        window.mui.back = function () {};
+      }
     },
     stop() {
       window.plus.webview.currentWebview().setStyle({
         popGesture: this.popGesture
       });
+
+      if (window.mui) {
+        window.mui.back = this.muiBackFunc;
+      }
     }
   },
 
@@ -86,9 +96,11 @@ export default {
 
     // hbuilder有个bug，子页面的statusbar不显示，所以子页面不加statusbar的高度
     const statusbarHeight = this.getStatusBarHeight();
-    if (!window.plus.webview.currentWebview().parent()) {
-      titleTotalHeight += statusbarHeight;
-    }
+    // if (!window.plus.webview.currentWebview().parent()) {
+    //   titleTotalHeight += statusbarHeight;
+    // }
+
+    titleTotalHeight += statusbarHeight;
 
     if (nativeTitleHeight > 0) {
 
@@ -153,10 +165,15 @@ export default {
     if (execResult && execResult.length === 3) {
       return parseFloat(execResult[2]);
     }
-    return window.plus.navigator.getStatusbarHeight();
+    return window.plus ? window.plus.navigator.getStatusbarHeight() : 0;
   },
 
   isNativeTitleDocking() {
-    return window.plus.webview.currentWebview().getStyle().titleNView.type === 'transparent';
+    let result = false;
+    try {
+      result = window.plus.webview.currentWebview().getStyle().titleNView.type === 'transparent';
+    }
+    catch (e) {}
+    return result;
   }
 };

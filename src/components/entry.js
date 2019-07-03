@@ -1,7 +1,7 @@
 import 'core-js/es6/set';
 import mand from './mand-mobile/modules/index';
 
-import cardCell from './business/card-cell';
+import CardCell from './business/card-cell/index';
 import marquee from './business/marquee';
 import picker from './business/picker/picker';
 import tag from './business/tag';
@@ -19,7 +19,7 @@ else if ('addEventListener' in document) {
 
 window.nextUI = Object.assign(
   {
-    cardCell,
+    CardCell,
     marquee,
     picker,
     tag

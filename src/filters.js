@@ -88,15 +88,12 @@ export default {
       return s;
     }
   },
-  formatNumber(number, decimals, emptyValue = '', prefix = '') {
-    if (typeof decimals !== 'number') {
-      prefix = emptyValue;
-      emptyValue = decimals;
-      decimals = 2;
-    }
-
-    if (!number || isNaN(number)) {
+  formatNumber(number, decimals = 2, emptyValue = '', prefix = '') {
+    if (typeof number === 'undefined') {
       return prefix + emptyValue;
+    }
+    if (isNaN(number)) {
+      return number;
     }
 
     number = parseFloat(number).toFixed(decimals);
@@ -115,7 +112,7 @@ export default {
   },
   cardTypeText(value) {
     const CARD_TYPE = Enum.CARD_TYPE;
-    const type = CARD_TYPE.find(item => (item.value === parseInt(value, 10)));
+    const type = CARD_TYPE.find(item => (item.value + '' === value + ''));
     if (type) {
       return type.text;
     }
@@ -137,6 +134,17 @@ export default {
 
     const mask = ' **** **** ';
     return cardNo.replace(/^\d{4}(\d+)\d{4}$/g, (match, segment, offset, string) => {
+      return string.replace(segment, mask);
+    });
+  },
+  phoneNumberMask(number) {
+    if (!number || number.length <= 7) {
+      return number;
+    }
+    number = number.replace(/^\+86/g, '');
+
+    const mask = '****';
+    return number.replace(/^\d{3}(\d+)\d{4}$/g, (match, segment, offset, string) => {
       return string.replace(segment, mask);
     });
   }

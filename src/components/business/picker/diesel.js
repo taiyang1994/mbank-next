@@ -1,3 +1,4 @@
+import fullScreenPatchUtil from './../fullscreen-patch-util';
 var readyRE = /complete|loaded|interactive/;
 var idSelectorRE = /^#([\w-]+)$/;
 var classSelectorRE = /^\.([\w-]+)$/;
@@ -333,9 +334,10 @@ diesel.createMask = function (callback) {
     mask.close();
   });
   mask._show = false;
-  mask.show = function () {
+  mask.show = function (config) {
     mask._show = true;
-    element.setAttribute('style', 'opacity:1');
+    const style = `opacity: 1; top: ${config.offsetTop || 0}px`;
+    element.setAttribute('style', style);
     document.body.appendChild(element);
     return mask;
   };
@@ -365,6 +367,57 @@ diesel.createMask = function (callback) {
 
 diesel.className = function (className) {
   return 'diesel-' + className;
+};
+
+diesel.isAndroidKeyboardShowing = function () {
+  if (!window.plus || window.plus.os.name !== 'Android') {
+    return false;
+  }
+  const webviewHeight = parseFloat(plus.android.invoke(plus.android.currentWebview(), 'getHeight'));
+  const screenHeight = parseFloat(plus.screen.height);
+  return webviewHeight + 100 <= screenHeight;
+};
+
+diesel.getStatusBarHeight = fullScreenPatchUtil.getStatusBarHeight;
+
+diesel.isNativeTitleDocking = fullScreenPatchUtil.isNativeTitleDocking;
+
+diesel.showNativeTitlePatch = function (ele, height) {
+  if (!window.plus || height === 0) {
+    return;
+  }
+  const patch = new window.plus.nativeObj.View('PickerPatch', {
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: parseFloat(height) + 'px',
+    backgroundColor: '#000000',
+    opacity: 0.3
+  });
+  patch.show();
+  fullScreenPatchUtil.webviewSwipeSwitcher.start();
+  window.addEventListener('swiperight', fullScreenPatchUtil.preventSwipeRightDefaultFunc, false);
+  ele.nativeTitlePatch = patch;
+  window.addEventListener('beforeunload', () => {
+    patch.close();
+  }, false);
+};
+
+diesel.hideNativeTitlePatch = function (ele) {
+  if (!window.plus || !ele.nativeTitlePatch) {
+    return;
+  }
+  ele.nativeTitlePatch.close();
+  ele.nativeTitlePatch = null;
+  fullScreenPatchUtil.webviewSwipeSwitcher.stop();
+  window.removeEventListener('swiperight', fullScreenPatchUtil.preventSwipeRightDefaultFunc, false);
+};
+
+diesel.preventAll = function (e) {
+  typeof e.stopImmediatePropagation === 'function' && e.stopImmediatePropagation();
+  e.stopPropagation();
+  e.preventDefault();
+  return false;
 };
 
 export default diesel;

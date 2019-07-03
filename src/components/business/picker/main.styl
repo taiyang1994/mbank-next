@@ -5,7 +5,7 @@
   right: 0;
   bottom: 0;
   left: 0;
-  background-color: rgba(0, 0, 0, .8);
+  background-color: rgba(0, 0, 0, .3);
 }
 
 .diesel-picker {
@@ -95,7 +95,6 @@
     white-space: nowrap;
     -webkit-text-overflow: ellipsis;
     text-overflow: ellipsis;
-    overflow: hidden;
     cursor: default;
     visibility: hidden;
     list-style: none;
@@ -131,44 +130,70 @@
 
 .diesel-dtpicker-header,
 .diesel-poppicker-header {
-  height: 58px;
-  line-height: 58px;
+  height: 48px;
+  line-height 48px
   font-size: 18px;
   color: #333;
-  padding: 0 17px;
   border-bottom: solid 1px #eaeaea;
   box-sizing: border-box;
   text-align: center;
+  position: relative;
 
   .diesel-btn {
     font-size: 16px;
-    height: 58px;
+    height: 48px;
     background: 0;
     border: 0;
     color: #898989;
     display: inline-block;
+    min-width 50px
 
     &.diesel-poppicker-btn-ok,
     &.diesel-dticker-btn-ok {
-      float: right;
-      color: #EF7D00;
+      color: #ef7d00;
+      position: absolute;
+      right: 17px;
+      top: 0;
+      padding 9px 0
+      box-sizing border-box
+      .diesel-btn-inner {
+        width 50px
+        height 30px
+        line-height 30px
+        text-align right
+      }
+      &:active {
+        color #f2841d
+      }
     }
 
     &.diesel-poppicker-btn-cancel,
     &.diesel-dticker-btn-cancel {
-      float: left;
+      height: 48px;
+      line-height: 48px;
+      position: absolute;
+      top: 0;
+      left: 17px;
+      text-align: left;
+      width: 50px;
     }
 
     &.diesel-dticker-btn-permanent {
       border: 1px solid #3264CC;
       border-radius: 2px;
-      font-size: 14px;
+      font-size: 13px;
       color: #3264CC;
       letter-spacing: 0;
       text-align: center;
-      width: 80px;
-      height: 30px;
-      line-height: 28px;
+      width: 74px;
+      height: 26px;
+      line-height: 24px;
+      box-sizing border-box
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      margin-left: -40px;
+      margin-top: -13px;
     }
   }
 }
@@ -201,8 +226,7 @@
   left: 0;
   width: 100%;
   z-index: 999999;
-  background-color: #eee;
-  border-top: solid 1px #ccc;
+  background-color: #fff;
   box-shadow: 0 -5px 7px 0 rgba(0, 0, 0, 0.1);
   -webkit-transition: .3s;
   bottom: 0;
@@ -220,7 +244,7 @@
 }
 
 .diesel-dtpicker-active-for-page {
-  overflow: hidden !important;
+  //overflow: hidden !important;
 }
 
 .diesel-dtpicker-body {
