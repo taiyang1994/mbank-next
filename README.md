@@ -1,4 +1,4 @@
-# mbank-next
+## mbank-next
 
 ## Project setup
 ```

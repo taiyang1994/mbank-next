@@ -5,6 +5,21 @@
         style="border: 1px solid #ccc; margin-bottom: 15px;"></textarea>
       <div @click="showCashier">点我显示收银台</div>
     </div>
+    <div class="section">
+      <div @click="isShowActionSheetIPhone8=true">IPhone8ActionSheet</div>
+    </div>
+    <div class="section">
+      <div @click="isShowActionSheetIPhone6=true">IPhone6ActionSheet</div>
+    </div>
+    <div class="section">
+      <div @click="isShowActionSheetExit=true">退出登录</div>
+    </div>
+    <div class="section">
+      <div @click="isShowActionSheetLineState=true">单行操作有说明</div>
+    </div>
+    <div class="section">
+      <div @click="isShowActionSheetLine=true">单行操作无说明</div>
+    </div>
     <div class="section no-padding">
       <div id="card1" />
     </div>
@@ -45,19 +60,33 @@
     </div>
     <div class="section">
       <div @click="showCompactLandscape=true;">简体内容弹窗(无header和footer)</div>
-      <md-landscape ref="dialog"
-        v-model="showCompactLandscape" compact mask-closable @close-icon-click="eventHandler" @mask-click="eventHandler"
->
+      <md-landscape
+        ref="dialog"
+        v-model="showCompactLandscape"
+        compact
+        mask-closable
+        @close-icon-click="eventHandler"
+        @mask-click="eventHandler"
+      >
         <div slot="content" style="position: relative; height: 100%;">
-          <img width="100%" src="https://gss1.bdstatic.com/9vo3dSag_xI4khGkpoWK1HF6hhy/baike/w%3D268%3Bg%3D0/sign=b372bd3285d4b31cf03c93bdbfed4042/2cf5e0fe9925bc31a5ffa7e950df8db1cb137025.jpg" alt="">
+          <img
+            width="100%"
+            src="https://gss1.bdstatic.com/9vo3dSag_xI4khGkpoWK1HF6hhy/baike/w%3D268%3Bg%3D0/sign=b372bd3285d4b31cf03c93bdbfed4042/2cf5e0fe9925bc31a5ffa7e950df8db1cb137025.jpg"
+            alt
+          >
           <div class="zm-dz">100000</div>
         </div>
       </md-landscape>
     </div>
     <div class="section">
       <div @click="showLandscape=true">弹窗</div>
-      <md-landscape v-model="showLandscape" mask-closable
-        @confirm="confirmDialog" @close-icon-click="eventHandler" @mask-click="eventHandler">
+      <md-landscape
+        v-model="showLandscape"
+        mask-closable
+        @confirm="confirmDialog"
+        @close-icon-click="eventHandler"
+        @mask-click="eventHandler"
+      >
         <template slot="content">
           <div>版本3.5.8</div>
           <div>1、【优化】登录时刷脸通不过提供了短信验证码备用认证，在此对因刷脸识别老不通过的客户致以诚挚的歉意；</div>
@@ -72,12 +101,9 @@
         <div slot="content">
           <div style="line-height: 26px;">
             预授予额度是针对优质客户专门匹配的信用贷款额度，您可通过手机银行直接在线办理、签约、提款。
-            <br>
-            1、预授信额度在通知您之日起30天内有效，请及时办理审批及提款；
-            <br>
-            2、预授信额度以实际审批为准；
-            <br>
-            3、预授信额度期限最长1年。
+            <br>1、预授信额度在通知您之日起30天内有效，请及时办理审批及提款；
+            <br>2、预授信额度以实际审批为准；
+            <br>3、预授信额度期限最长1年。
           </div>
         </div>
       </md-landscape>
@@ -86,22 +112,16 @@
       <marquee text="你有一条新短消息请注意查收你有一条新短消息请注意查收" />
     </div>
     <div class="section">
-      <timeline
-        :steps="steps"
-        direction="vertical"
-      />
+      <timeline :steps="steps" direction="vertical" />
     </div>
     <div class="section">
-      <timeline
-        :steps="stepsHorn"
-        transition
-      />
+      <timeline :steps="stepsHorn" transition />
       <button
         style="margin-top: 10px;"
         @click="stepsHorn[2].SysNo = '0'; stepsHorn[4].SysNo = '1'"
       >
-        go step 5
-      </button>
+go step 5
+</button>
     </div>
     <div class="section no-padding">
       <card-cell :list="cardList" />
@@ -121,6 +141,47 @@
     <div class="section no-padding">
       <card-cell :list="cardList" layout="mini" :is-switchable="false" :selected-index="4" />
     </div>
+    <div>
+      <action-sheet
+      v-model="isShowActionSheetIPhone8"
+      :options="ActionSheet1"
+      is-iphone-x
+      @selected="handleSelect"
+      />
+    </div>
+    <div>
+      <action-sheet
+        v-model="isShowActionSheetIPhone6"
+        :options="ActionSheet1"
+        :default-index="1"
+        @selected="handleSelect"
+      />
+    </div>
+    <div>
+      <action-sheet
+        v-model="isShowActionSheetExit"
+        :title="ActionSheetExit.title"
+        :options="ActionSheetExit.ActionSheet"
+        @selected="handleSelect"
+      />
+    </div>
+    <div>
+      <action-sheet
+        v-model="isShowActionSheetLineState"
+        :title="ActionSheetLine.title"
+        :options="ActionSheetLine.ActionSheet"
+        :default-index="1"
+        @selected="handleSelect"
+      />
+    </div>
+    <div>
+      <action-sheet
+        v-model="isShowActionSheetLine"
+        :options="ActionSheetLine.ActionSheet2"
+        :default-index="1"
+        @selected="handleSelect"
+      />
+    </div>
   </div>
 </template>
 
@@ -134,15 +195,18 @@ import Button from '@mand-mobile/button';
 import Tag from './components/business/tag';
 import picker from './components/business/picker/picker';
 import cashier from './components/business/cashier/index';
+import actionSheet from '../src/components/mand-mobile/components/action-sheet';
 Vue.use(Landscape);
 Vue.use(Button);
+Vue.use(actionSheet);
 export default {
   name: 'App',
   components: {
     timeline,
     [CardCell.name]: CardCell,
     [Marquee.name]: Marquee,
-    [Tag.name]: Tag
+    [Tag.name]: Tag,
+    actionSheet
   },
   data() {
     return {
@@ -155,6 +219,12 @@ export default {
       showLandscape: false,
       showFullScreenLandscape: false,
       showCompactLandscape: false,
+      isShowActionSheet: false,
+      isShowActionSheetIPhone8: false,
+      isShowActionSheetIPhone6: false,
+      isShowActionSheetExit: false,
+      isShowActionSheetLineState: false,
+      isShowActionSheetLine: false,
       cashier: null,
       steps: [],
       stepsHorn: [
@@ -164,67 +234,118 @@ export default {
         {timeFlag: '06.12', timeFlagMsg: '下一起息日'},
         {timeFlag: '06.12', timeFlagMsg: '下一到期日'}
       ],
-      cardList: [{
-        'E_ACCOUNT_TYPE': '0004',
-        'E_ACCT_NO': '50000000000000668655',
-        'E_ACTP_FLAG': 'A',
-        'E_ACCOUNT_BALANCE': '0.00',
-        'E_AVAILABLEAMOUNT': '132,123,123.3456',
-        'E_CARD_NO': '62176027080005011',
-        'E_ISSUE_BRANCH': '0002',
-        'E_CARD_STATE': '01',
-        'E_ID_VERFIED': 'N'
-      }, {
-        'E_ACCOUNT_TYPE': '0004',
-        'E_ACCT_NO': '50000000000000663030',
-        'E_ACTP_FLAG': '3',
-        'E_ACCOUNT_BALANCE': '0.00',
-        'E_AVAILABLEAMOUNT': '0.00',
-        'E_CARD_NO': '62176022460000054',
-        'E_ISSUE_BRANCH': '0101',
-        'E_CARD_STATE': '01',
-        'E_ID_VERFIED': 'N'
-      }, {
-        'E_ACCOUNT_TYPE': '0004',
-        'E_ACCT_NO': '50000000000000668663',
-        'E_ACTP_FLAG': '',
-        'E_ACCOUNT_BALANCE': '0.00',
-        'E_AVAILABLEAMOUNT': '0.00',
-        'E_CARD_NO': '62176027080005029',
-        'E_ISSUE_BRANCH': '0002',
-        'E_CARD_STATE': '01',
-        'E_ID_VERFIED': 'N'
-      }, {
-        'E_ACCOUNT_TYPE': '0004',
-        'E_ACCT_NO': '50000000000000667943',
-        'E_ACTP_FLAG': '2',
-        'E_ACCOUNT_BALANCE': '7962457.49',
-        'E_AVAILABLEAMOUNT': '7952457.48',
-        'E_CARD_NO': '62176056080010283',
-        'E_ISSUE_BRANCH': '1401',
-        'E_CARD_STATE': '01',
-        'E_ID_VERFIED': 'N'
-      }, {
-        'E_ACCOUNT_TYPE': '0004',
-        'E_ACCT_NO': '50000000000000650526',
-        'E_ACTP_FLAG': '1',
-        'E_ACCOUNT_BALANCE': '79355397.07',
-        'E_AVAILABLEAMOUNT': '75593297.07',
-        'E_CARD_NO': '62176022030539284',
-        'E_ISSUE_BRANCH': '0101',
-        'E_CARD_STATE': '01',
-        'E_ID_VERFIED': 'Y'
-      }, {
-        'E_ACCOUNT_TYPE': '0004',
-        'E_ACCT_NO': '50000000000000667357',
-        'E_ACTP_FLAG': '2',
-        'E_ACCOUNT_BALANCE': '30.00',
-        'E_AVAILABLEAMOUNT': '30.00',
-        'E_CARD_NO': '62176056080010085',
-        'E_ISSUE_BRANCH': '1401',
-        'E_CARD_STATE': '01',
-        'E_ID_VERFIED': 'N'
-      }].map(item => ({
+      ActionSheet1: [
+        {
+          label: '面容ID登录',
+          value: 0,
+          type: ' primary'
+        },
+        {
+          label: '密码登录',
+          value: 1,
+          type: ' primary'
+        },
+        {
+          label: '触控ID登录',
+          value: 2,
+          type: 'primary'
+        }
+      ],
+      ActionSheetExit: {
+        title: '退出后不会删除任何历史数据，下次登录依然可以使用本账号。',
+        ActionSheet: [
+          {
+            label: '退出登录',
+            value: 0,
+            type: 'warning'
+          }
+        ]
+      },
+      ActionSheetLine: {
+        title: '解除绑定后，手机银行将无法使用该卡片',
+        ActionSheet: [
+          {
+            label: '解除绑定',
+            value: 0,
+            type: 'primary'
+          }
+        ],
+        ActionSheet2: [
+          {
+            label: '变更资金库',
+            value: 0,
+            type: 'primary'
+          }
+        ]
+      },
+      cardList: [
+        {
+          E_ACCOUNT_TYPE: '0004',
+          E_ACCT_NO: '50000000000000668655',
+          E_ACTP_FLAG: '2',
+          E_ACCOUNT_BALANCE: '0.00',
+          E_AVAILABLEAMOUNT: '132,123,123.3456',
+          E_CARD_NO: '62176027080005011',
+          E_ISSUE_BRANCH: '0002',
+          E_CARD_STATE: '01',
+          E_ID_VERFIED: 'N'
+        },
+        {
+          E_ACCOUNT_TYPE: '0004',
+          E_ACCT_NO: '50000000000000663030',
+          E_ACTP_FLAG: '3',
+          E_ACCOUNT_BALANCE: '0.00',
+          E_AVAILABLEAMOUNT: '0.00',
+          E_CARD_NO: '62176022460000054',
+          E_ISSUE_BRANCH: '0101',
+          E_CARD_STATE: '01',
+          E_ID_VERFIED: 'N'
+        },
+        {
+          E_ACCOUNT_TYPE: '0004',
+          E_ACCT_NO: '50000000000000668663',
+          E_ACTP_FLAG: '2',
+          E_ACCOUNT_BALANCE: '0.00',
+          E_AVAILABLEAMOUNT: '0.00',
+          E_CARD_NO: '62176027080005029',
+          E_ISSUE_BRANCH: '0002',
+          E_CARD_STATE: '01',
+          E_ID_VERFIED: 'N'
+        },
+        {
+          E_ACCOUNT_TYPE: '0004',
+          E_ACCT_NO: '50000000000000667943',
+          E_ACTP_FLAG: '2',
+          E_ACCOUNT_BALANCE: '7962457.49',
+          E_AVAILABLEAMOUNT: '7952457.48',
+          E_CARD_NO: '62176056080010283',
+          E_ISSUE_BRANCH: '1401',
+          E_CARD_STATE: '01',
+          E_ID_VERFIED: 'N'
+        },
+        {
+          E_ACCOUNT_TYPE: '0004',
+          E_ACCT_NO: '50000000000000650526',
+          E_ACTP_FLAG: '1',
+          E_ACCOUNT_BALANCE: '79355397.07',
+          E_AVAILABLEAMOUNT: '75593297.07',
+          E_CARD_NO: '62176022030539284',
+          E_ISSUE_BRANCH: '0101',
+          E_CARD_STATE: '01',
+          E_ID_VERFIED: 'Y'
+        },
+        {
+          E_ACCOUNT_TYPE: '0004',
+          E_ACCT_NO: '50000000000000667357',
+          E_ACTP_FLAG: '2',
+          E_ACCOUNT_BALANCE: '30.00',
+          E_AVAILABLEAMOUNT: '30.00',
+          E_CARD_NO: '62176056080010085',
+          E_ISSUE_BRANCH: '1401',
+          E_CARD_STATE: '01',
+          E_ID_VERFIED: 'N'
+        }
+      ].map(item => ({
         cardType: item.E_ACTP_FLAG,
         cardNo: item.E_CARD_NO,
         balance: item.E_ACCOUNT_BALANCE,
@@ -315,6 +436,9 @@ export default {
     },
     handlePickerConfirm(...args) {
       console.log(args);
+    },
+    handleSelect(item) {
+      console.log(item);
     },
     showFullDatePicker() {
       if (!this.fullDatePicker) {
@@ -467,7 +591,11 @@ export default {
         ]);
       }
       this.cascadePicker.show(selected => {
-        alert(`选择的数据： ${JSON.stringify(selected.map(item => ({text: item.text, value: item.value})))}`);
+        alert(
+          `选择的数据： ${JSON.stringify(
+            selected.map(item => ({text: item.text, value: item.value}))
+          )}`
+        );
         return true;
       });
     },
@@ -484,26 +612,26 @@ export default {
 </script>
 
 <style>
-  * {
-    margin: 0;
-    padding: 0;
-  }
-  .section {
-    background: #fff;
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    padding: 15px;
-    margin-bottom: 15px;
-  }
-  .section.no-padding {
-    padding: 0;
-    background: none;
-  }
-  .section:not(:last-child) {
-    border-bottom: 1px solid #ececec;
-  }
-  body {
-    background: #eaeaea;
-  }
+* {
+  margin: 0;
+  padding: 0;
+}
+.section {
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+.section.no-padding {
+  padding: 0;
+  background: none;
+}
+.section:not(:last-child) {
+  border-bottom: 1px solid #ececec;
+}
+body {
+  background: #eaeaea;
+}
 </style>
