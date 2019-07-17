@@ -11,7 +11,9 @@
     </div>
     <div class="cashier-content cashier-content-native-keyboard">
       <div class="cashier-verification-mobile">
-        已发送至手机 <span>{{mobile | phoneNumberMask}}</span>
+        <template v-if="smsSendSucceed">
+          已发送至手机 <span>{{mobile | phoneNumberMask}}</span>
+        </template>
       </div>
       <div class="cashier-verification-main">
         <input ref="input" v-model="code" type="tel" maxlength="6">
@@ -26,12 +28,15 @@
           </span>
           <span :class="{'fake-cursor': code.length === 6 && focused}"></span>
         </div>
-        <md-button type="primary-flat" :disabled="cooldown > 0" @click="sendCodeRequest" inline>
+        <md-button type="primary-flat" :disabled="cooldown > 0" inline @click="refetchSms">
           {{cooldown ? `重新获取(${cooldown}s)` : '获取短信'}}
         </md-button>
       </div>
-      <div class="cashier-verification-help">
+      <div class="cashier-verification-help" @click="question">
         收不到验证码？
+      </div>
+      <div class="cashier-slogan">
+        -包商银行为您安全护航-
       </div>
     </div>
   </div>
@@ -70,8 +75,13 @@ export default {
   },
   mixins: [base],
   data() {
+    const {sms} = this.options.steps;
+    const {userInfo} = this.options.context;
     return {
-      mobile: '13754024286',
+      enterEventIdPrefix: '00900018',
+      mobile: sms.mobile || userInfo.getItem('accountPhone'),
+      smsInfo: {},
+      smsSendSucceed: false,
       cooldown: 0,
       cooldownTimer: 0,
       code: '',
@@ -99,7 +109,32 @@ export default {
   },
   methods: {
     confirm() {
-      this.$emit('confirm', this.code);
+      const smsCode = this.code;
+      const {transaction, steps, carries, context, user, card} = this.options;
+      if (carries.bsnCode === '09200206' && carries.flag === '11') {
+        context.common.getSrandNumber(false, data => {
+          const [random, randomId] = data.split('|');
+          const params = {...carries, smsCode, taskId: this.smsInfo.taskId, random, randomId};
+          context.mbank.openWindowByLoad('_www/views/cfca/resetTransPsw3.html', 'resetTransPsw3', 'pop-in', params);
+        });
+        return;
+      }
+      const params = {
+        OrderNo: transaction.id,
+        security: steps.path,
+        currentBusinessCode: '00900003',
+        session_customerId: user.id,
+        bsnCode: carries.bsnCode,
+        accountNo: card.cardNo,
+        Amt: card.payment.eleAmount,
+        passwordEncrypted: smsCode,
+        smsCode: smsCode,
+        TASKID: this.smsInfo.taskId,
+        orderId: this.smsInfo.orderId,
+        smsFlag: this.smsInfo.smsFlag,
+        requestId: this.smsInfo.requestId
+      };
+      context.acctInfo.checkMessage(params, this.smsCheckSuccess, this.smsCheckFail);
     },
     setFocus() {
       this.$refs.input.focus();
@@ -115,12 +150,62 @@ export default {
         this.setBlur();
       }
     },
-    sendCodeRequest: async function () {
+    smsCheckSuccess(data) {
+      this.track('00900009');
+      this.options.carries.eleAccountChargeTime = data.tallyDate;
+      this.accomplish();
+    },
+    smsCheckFail(err) {
+      const {mui} = this.options.context;
+      if (this.options.transaction.type === '238' && ['3014', '3015'].includes(err.ec)) {
+        mui.alert('短信验证码错误或失效，请重新获取');
+      }
+      else if (err.ec === '3015') {
+        this.track('00900007');
+        mui.alert('短信验证码错误或失效');
+      }
+      else {
+        mui.alert(err.em);
+      }
+    },
+    async refetchSms() {
+      this.track('00900008');
+      await this.sendCodeRequest();
+    },
+    async sendCodeRequest() {
+      const {transaction, carries, context, steps, card, user} = this.options;
+      const {mbank, userInfo, mui} = context;
       return new Promise((resolve, reject) => {
-        setTimeout(() => {
+        const api = userInfo.getItem('sessionId') ? 'sendMsgToCst.do' : 'sendMsgToCstNoSession.do';
+        const params = {
+          bsnCode: carries.bsnCode,
+          security: steps.path,
+          currentBusinessCode: '02000015',
+          transSeqNo: transaction.id,
+          session_customerId: user.id,
+          accountNo: card.cardNo,
+          payAccount: card.cardNo,
+          recAccount: card.reveive.cardNo,
+          recAccountName: card.reveive.name,
+          payAmount: card.payment.amount,
+          payUse: card.payment.use,
+          mobile: card.payment.mobile,
+          Amt: card.payment.eleAmount
+        };
+        mbank.apiSend(api, params, data => {
+          this.smsSendSucceed = true;
           this.startCountingDown();
-          return resolve([1, 2, 3]);
-        }, 1000);
+          this.smsInfo = {
+            taskId: data.TASKID,
+            orderId: data.orderId,
+            smsFlag: data.smsFlag,
+            requestId: data.requestId
+          };
+          return resolve();
+        }, err => {
+          mui.alert(err.em);
+          return reject();
+        }, true);
       });
     },
     startCountingDown() {
@@ -131,12 +216,17 @@ export default {
           clearInterval(this.cooldownTimer);
         }
       }, 1000);
+    },
+    question() {
+      this.options.context.mui.alert('验证码短信可能略有延迟。请检查手机是否在服务区且信号良好或稍后再试。');
     }
   }
 };
 </script>
 
 <style lang="stylus">
+  .cashier-content.cashier-content-native-keyboard
+    margin-bottom  0
   .cashier-verification-mobile
     font-size 12px
     margin-bottom 10px

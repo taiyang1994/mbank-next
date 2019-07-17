@@ -5,6 +5,7 @@ import CardCell from './business/card-cell/index';
 import marquee from './business/marquee';
 import picker from './business/picker/picker';
 import tag from './business/tag';
+import Cashier from './business/cashier/index';
 
 import fastclick from 'fastclick';
 
@@ -22,7 +23,8 @@ window.nextUI = Object.assign(
     CardCell,
     marquee,
     picker,
-    tag
+    tag,
+    Cashier
   },
   mand
 );

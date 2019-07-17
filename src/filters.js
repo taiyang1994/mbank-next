@@ -110,13 +110,23 @@ export default {
     }
     return result;
   },
-  cardTypeText(value) {
+  cardTypeConfig(value) {
     const CARD_TYPE = Enum.CARD_TYPE;
-    const type = CARD_TYPE.find(item => (item.value + '' === value + ''));
+    return CARD_TYPE.find(item => (item.value + '' === value + ''));
+  },
+  cardTypeText(value) {
+    const type = this.cardTypeConfig(value);
     if (type) {
       return type.text;
     }
     return '未知';
+  },
+  cardTypeAlias(value) {
+    const type = this.cardTypeConfig(value);
+    if (type) {
+      return type.alias;
+    }
+    return '';
   },
   cardSuffix4(cardNo) {
     return cardNo ? cardNo.substring(cardNo.length - 4) : '';

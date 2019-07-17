@@ -1,6 +1,8 @@
 <template>
   <div id="app">
     <div class="section">
+      <textarea ref="cashierConfig" v-model="cashierConfig" rows="20"
+        style="border: 1px solid #ccc; margin-bottom: 15px;"></textarea>
       <div @click="showCashier">点我显示收银台</div>
     </div>
     <div class="section">
@@ -128,7 +130,7 @@ go step 5
       <card-cell :list="cardList" layout="compact-display" :selected-index="4" />
     </div>
     <div class="section no-padding">
-      <card-cell :list="cardList" layout="compact-action" action-title="基金赎回至" />
+      <card-cell :list="cardList" layout="compact-action-display" account-title="基金赎回至" />
     </div>
     <div class="section no-padding">
       <card-cell :list="cardList" layout="simple" />
@@ -347,8 +349,70 @@ export default {
         cardType: item.E_ACTP_FLAG,
         cardNo: item.E_CARD_NO,
         balance: item.E_ACCOUNT_BALANCE,
-        availableBalance: item.E_AVAILABLEAMOUNT
-      }))
+        availableBalance: item.E_AVAILABLEAMOUNT,
+        bankLogoSrc: '1'
+      })),
+      cashierConfig: `{
+        "transaction": {
+          "id": "888888",
+          "type": "123456",
+          "random": "abcde",
+          "randomId": 666
+        },
+        "steps": {
+          "confirm": {
+            "show": true,
+            "btnText": "确认下一步",
+            "title": "请确认信息",
+            "content": "{\\\"转账金额\\\":\\\"1.00元\\\",\\\"金额大写\\\":\\\"壹元整\\\",\\\"收款户名\\\":\\\"杜桂芝\\\",\\\"收款账户\\\":\\\"6223 3602 0075 0925 2\\\",\\\"开户行\\\":\\\"包商银行\\\",\\\"付款账号\\\":\\\"6217 **** **** 1415\\\",\\\"手续费\\\":\\\"0.00元\\\",\\\"转账用途\\\":\\\"手机银行转账\\\"}"
+          },
+          "cert": {
+            "cfcaFlag": "12123",
+            "bsCode": "12333"
+          },
+          "sms": {
+            "btnText": "提交",
+            "mobile": "13866668888"
+          },
+          "result": {
+            "show": true
+          },
+          "path": "11111"
+        },
+        "card": {
+          "cardNo": "6217111122223333",
+          "type": "1",
+          "isVerified": true,
+          "creditCardPasswordType": "2",
+          "receive": {
+            "cardNo": "62258801644489888",
+            "name": "祝枝山"
+          },
+          "payment": {
+            "amount": "1000",
+            "use": "转账",
+            "mobile": "13866668888",
+            "eleAmount": "10000"
+          }
+        },
+        "carries": {
+          "flag": 1,
+          "customerNo": "123456789",
+          "bsnCode": "100120"
+        },
+        "user": {
+          "id": "1234567"
+        },
+        "page": {
+          "id": "from-page-id"
+        },
+        "context": {
+          "mbank": {},
+          "userInfo": {},
+          "safeKeyboard": {},
+          "certificate": {}
+        }
+      }`
     };
   },
   mounted() {
@@ -445,6 +509,13 @@ export default {
       this.picker.show(selected => {
         alert(`选择的数据： ${JSON.stringify(selected)}`);
         return true;
+      }, {
+        cancelClickCallback: () => {
+          console.log('cancel');
+        },
+        maskClickCallback: () => {
+          console.log('cancel');
+        }
       });
     },
     showCascadePicker() {
@@ -532,7 +603,8 @@ export default {
       alert('点了确认升级');
     },
     showCashier() {
-      this.cashier = cashier.init();
+      const options = JSON.parse(this.cashierConfig);
+      this.cashier = cashier.init(options);
       this.cashier.show();
     }
   }
@@ -554,6 +626,7 @@ export default {
 }
 .section.no-padding {
   padding: 0;
+  background: none;
 }
 .section:not(:last-child) {
   border-bottom: 1px solid #ececec;

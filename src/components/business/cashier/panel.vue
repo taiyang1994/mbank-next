@@ -13,36 +13,36 @@
           <confirm-information
             v-if="name === 'confirm-information' && stepName === name"
             :active="stepName === name"
-            :infos="[
-              {key: '转账金额', value: '50,001.00元'},
-              {key: '金额大写', value: '伍万零壹元整'},
-              {key: '收款户名', value: '王小石'},
-              {key: '收款账户', value: '6214 8501 1872 2971'},
-              {key: '开户行', value: '招商银行'},
-              {key: '分支行', value: '招商银行股份有限公司北京东四环支行'},
-              {key: '付款账号', value: '6217 **** **** 6049'},
-              {key: '手续费', value: '0.00元'},
-              {key: '转账用途', value: '手机银行转账'}
-            ]"
-            @accomplish="next"
+            :options="options"
+            @accomplish="stepAccomplish('confirm-information')"
             @close="close"
           />
           <enter-static-password
             v-if="name === 'enter-static-password' && stepName === name"
             :active="stepName === name"
-            password-type-name="卡片取款"
-            @accomplish="next"
+            :options="options"
+            @accomplish="stepAccomplish('enter-static-password')"
             @close="close"
           />
           <enter-verification-code
             v-if="name === 'enter-verification-code' && stepName === name"
             :active="stepName === name"
-            @confirm="verificationCodeConfirmed"
+            :options="options"
+            @accomplish="stepAccomplish('enter-verification-code')"
+            @close="close"
+          />
+          <enter-static-password
+            v-if="name === 'enter-certification-password' && stepName === name"
+            :active="stepName === name"
+            type="certification"
+            :options="options"
+            @accomplish="stepAccomplish('enter-certification-password')"
             @close="close"
           />
           <show-result
             v-if="name === 'show-result' && stepName === name"
             :active="stepName === name"
+            :options="options"
             @close="close"
           />
         </md-transition>
@@ -52,9 +52,9 @@
 </template>
 
 <script>
-import Popup from '@mand-mobile/popup';
-import Button from '@mand-mobile/button';
-import Transition from '@mand-mobile/transition';
+import Popup from '@mand-mobile/popup/index';
+import Button from '@mand-mobile/button/index';
+import Transition from '@mand-mobile/transition/index';
 import ConfirmInformation from './steps/confirm-information';
 import EnterStaticPassword from './steps/enter-static-password';
 import EnterVerificationCode from './steps/enter-verification-code';
@@ -71,24 +71,68 @@ export default {
     [EnterVerificationCode.name]: EnterVerificationCode,
     [ShowResult.name]: ShowResult
   },
+  props: {
+    options: {
+      type: Object,
+      default: Object
+    }
+  },
   data() {
     return {
       step: 0,
-      steps: [
-        'confirm-information',
-        'enter-static-password',
-        'enter-verification-code',
-        'show-result'
-      ],
       isShow: false,
-
       verificationCode: ''
     };
   },
   computed: {
+    steps() {
+      const path = this.options.steps.path.split('');
+      if (path.length === 5) {
+        path.length = 4;
+      }
+
+      const steps = [];
+
+      // 确认信息
+      if (this.options.steps.confirm.show) {
+        steps.push('confirm-information');
+      }
+
+      path.forEach((digit, index) => {
+        switch (index) {
+          case 0:
+            if (parseInt(digit, 10)) {
+              steps.push('enter-static-password');
+            }
+            break;
+          case 1:
+            if (parseInt(digit, 10)) {
+              steps.push('enter-verification-code');
+            }
+            break;
+          case 2:
+            break; // token已废弃
+          case 3:
+            if (parseInt(digit, 10)) {
+              steps.push('enter-certification-password');
+            }
+            break;
+        }
+      });
+
+      // 展示结果
+      if (this.options.steps.result.show) {
+        steps.push('show-result');
+      }
+
+      return steps;
+    },
     stepName() {
       return this.steps[this.step];
     }
+  },
+  mounted() {
+    //
   },
   methods: {
     show() {
@@ -98,12 +142,13 @@ export default {
       this.isShow = false;
       this.$el.parentNode.removeChild(this.$el);
     },
-    next() {
-      this.step++;
-    },
-    verificationCodeConfirmed(code) {
-      this.verificationCode = code;
-      this.next();
+    stepAccomplish(stepName) {
+      if (stepName === this.steps[this.steps.length - 1]) {
+        this.$emit('accomplish', this.options);
+      }
+      else {
+        this.step++;
+      }
     }
   }
 };
@@ -111,7 +156,7 @@ export default {
 
 <style lang="stylus">
   @import "./../../theme.variables.styl"
-  .md-popup
+  .cashier .md-popup
     display block !important
     .md-popup-box.md-slide-up
       position fixed
@@ -166,4 +211,16 @@ export default {
     right 0
     bottom 0
     box-sizing border-box
+    .cashier-slogan
+      height 28px
+      line-height 28px
+      font-size 20px
+      transform scale(0.5)
+      transform-origin center bottom
+      color #c9c9c9
+      text-align center
+      position absolute
+      bottom 30px
+      left 0
+      right 0
 </style>

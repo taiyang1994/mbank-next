@@ -14,7 +14,7 @@ export default class {
     list: [],
     cardNo: '',
     specific: false,
-    sourceType: 'normal',
+    sourceType: 'unset',
     scope: 'I,II',
     loadingWhileFetching: true,
 
@@ -27,9 +27,9 @@ export default class {
     pickerOptions: {}
   };
   constructor(options) {
-    if (!options.list || !options.length) {
-      if (options.sourceType && !sourceTypes.includes(options.sourceType)) {
-        throw new Error(`Parameter {sourceType} must be in [${sourceTypes.join(', ')}]`);
+    if (!options.list || !options.list.length) {
+      if (!options.sourceType && !sourceTypes.includes(options.sourceType)) {
+        throw new Error(`When list is empty, parameter {sourceType} must be in [${sourceTypes.join(', ')}]`);
       }
       if (options.scope && !scopes.includes(options.scope)) {
         throw new Error(`Parameter {scope} must be in [${scopes.join(', ')}]`);
@@ -42,13 +42,13 @@ export default class {
       const Cell = Vue.extend(CardCell);
       const cell = new Cell({
         propsData: {
-          switchable: this.options.switchable,
+          switchable: this.options.switchable && !this.options.specific,
           layout: this.options.layout,
           accountTitle: this.options.accountTitle,
           balanceText: this.options.balanceText,
           list: this.list,
           selectedCardNo: this.options.cardNo,
-          isAvailableBalanceView: !this.options.isAccountBalanceView,
+          isAccountBalanceView: this.options.isAccountBalanceView,
           pendingSelection: this.options.pendingSelection,
           pickerOptions: this.options.pickerOptions
         }
@@ -56,6 +56,8 @@ export default class {
       if (this.options.$el && document.querySelector(this.options.$el)) {
         cell.$mount(this.options.$el);
       }
+
+      cell.$on('charge', this.charge.bind(this));
 
       let currentCard = this.list[0];
       if (this.options.cardNo) {
@@ -66,7 +68,7 @@ export default class {
   }
   getList() {
     if (this.options.list && this.options.list.length) {
-      this.list = this.options.list.map(item => this.fillCardInfo(item));
+      this.list = this.options.list;
       return Promise.resolve();
     }
     let fetch = null;
@@ -81,9 +83,10 @@ export default class {
         fetch = this.fetchQRAccount();
         break;
       case 'saving':
-        fetch = Promise.all(this.fetchEleAccount(), this.fetchPhysicalAccount());
-        fetch.then(results => {
-          return [...results[0], ...results[1]];
+        fetch = Promise.all(
+          [this.fetchEleAccount(), this.fetchNormalAccount()]
+        ).then(([eleAccounts, normalAccounts]) => {
+          return [...eleAccounts, ...normalAccounts];
         });
         break;
       case 'ebank':
@@ -141,7 +144,7 @@ export default class {
       const sessionId = getInfo('sessionId');
       this.options.mbank.apiSend('post', sessionId ? 'QRCodeCardSeqQuery.do' : 'QRCodeCardSeqQueryNoSession.do',
         {
-          currentBusinessCode: '20000269',
+          currentBusinessCode: sessionId ? '20000269' : '20000279',
           phone: getInfo('accountPhone'),
           flag: sessionId ? 'on' : 'off',
           transFlag: ''
@@ -149,7 +152,23 @@ export default class {
         data => {
           const list = data.UPCodeCardList;
           list.forEach(item => {
-            // TODO: 完善二维码切卡
+            item.availableBalance = item.acct_balance;
+            item.oriCardType = item.cardType;
+            switch (item.oriCardType) {
+              case '0':
+                // 电子账户
+                item.cardType = '0';
+                break;
+              default:
+              case '1':
+                // 本行123类户
+                item.cardType = item.cardLevel;
+                break;
+              case 'A':
+                // 本行信用卡
+                item.cardType = 'A';
+                break;
+            }
           });
           resolve(list);
         },
@@ -164,7 +183,10 @@ export default class {
     return new Promise((resolve, reject) => {
       this.options.mbank.apiSend('post', 'queryAccountInEbankNEW.do', {currentBusinessCode: '20000224'},
         data => {
-          resolve(data.ET_MASTER_LIST.map(item => (this.fillCardInfo(item))));
+          resolve(data.ET_MASTER_LIST.map(item => {
+            item.cardNo = item.accountNo;
+            return this.fillCardInfo(item);
+          }));
         },
         error => {
           reject(error);
@@ -177,8 +199,12 @@ export default class {
     const result = {...card};
     const cardPropertyMap = [
       {
+        key: 'accountNo',
+        alias: ['oriAccountNo', 'E_ACCT_NO']
+      },
+      {
         key: 'cardNo',
-        alias: ['accountNo', 'E_CARD_NO']
+        alias: ['E_CARD_NO']
       },
       {
         key: 'cardType',
@@ -214,8 +240,16 @@ export default class {
       });
     });
 
+    result.oriCardType = result.cardType;
+    if (result.cardType === 'S') {
+      result.cardType = '2';
+    }
+    if (result.cardType === 'T') {
+      result.cardType = '3';
+    }
+
     const cardType = Enum.CARD_TYPE.find(config => (config.value + '' === result.cardType + ''));
-    result.cardTypeName = cardType ? cardType.text : (result.cardTypeName || '未知类型卡');
+    result.cardTypeName = cardType ? cardType.text : (result.cardTypeName || '');
     return result;
   }
   filterByScope(list) {
@@ -233,4 +267,37 @@ export default class {
       }
     });
   }
-};
+  charge(card) {
+    const mbank = this.options.mbank;
+    mbank.apiSend(
+      'post',
+      'newEleMessageQuery.do',
+      {
+        accountNo: card.cardNo,
+        currentBusinessCode: '00002023'
+      },
+      data => {
+        const bondCard = data.bingAccountList[0];
+        let cardType = card.oriCardType;
+        if (cardType === '2') {
+          cardType = 'S';
+        }
+        if (cardType === '3') {
+          cardType = 'T';
+        }
+        const params = {
+          accountNo: card.cardNo,
+          cardType: cardType,
+          cardNo: bondCard.LK_CARD_NO,
+          telephoneNumber: bondCard.LK_MOBILE,
+          bankName: bondCard.LK_BANK_NAME
+        };
+        this.options.mbank.openWindowByLoad(
+          '_www/views/account/eleRechagerNew.html', 'eleRechagerNew', 'pop-in', params
+        );
+      },
+      null,
+      true
+    );
+  }
+}
