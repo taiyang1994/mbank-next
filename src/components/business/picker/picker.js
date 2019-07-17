@@ -452,7 +452,7 @@ var PopPicker = $.PopPicker = $.Class.extend({
     self.cancel.innerText = self.options.buttons[0];
     self.ok.innerText = self.options.buttons[1];
     self.cancel.addEventListener('click', function (event) {
-      self.hide();
+      self.cancelClickHandler();
     }, false);
     self.ok.addEventListener('click', function (event) {
       if (self.callback) {
@@ -463,7 +463,7 @@ var PopPicker = $.PopPicker = $.Class.extend({
       }
     }, false);
     self.mask[0].addEventListener('click', function () {
-      self.hide();
+      self.maskClickHandler();
     }, false);
     self._createPicker();
     // 防止滚动穿透
@@ -539,8 +539,11 @@ var PopPicker = $.PopPicker = $.Class.extend({
   
     options = {nativeTitlePatchHeight: 44, ...options};
     
-    if (typeof options.hideCallback === 'function') {
-      self.hideCallback = options.hideCallback;
+    if (typeof options.cancelClickCallback === 'function') {
+      self.cancelClickCallback = options.cancelClickCallback;
+    }
+    if (typeof options.maskClickCallback === 'function') {
+      self.maskClickCallback = options.maskClickCallback;
     }
   
     if (options.nativeTitlePatchHeight !== 0) {
@@ -574,13 +577,20 @@ var PopPicker = $.PopPicker = $.Class.extend({
       showView();
     }
   },
+  cancelClickHandler() {
+    typeof this.cancelClickCallback === 'function' && this.cancelClickCallback();
+    this.hide();
+  },
+  maskClickHandler() {
+    typeof this.maskClickCallback === 'function' && this.maskClickCallback();
+    this.hide();
+  },
   // 隐藏
   hide: function () {
     var self = this;
     if (self.disposed) {
       return;
     }
-    typeof self.hideCallback === 'function' && self.hideCallback();
     self.panel.classList.remove($.className('active'));
     self.mask.close();
     $.hideNativeTitlePatch(self);

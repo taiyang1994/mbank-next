@@ -5,7 +5,12 @@ export default {
   init(options) {
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const cashier = new Vue(panel);
+    const Cashier = Vue.extend(panel);
+    const cashier = new Cashier({
+      propsData: {
+        options
+      }
+    });
     cashier.$mount(container);
 
     return cashier;

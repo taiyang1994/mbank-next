@@ -34,10 +34,14 @@
 
 <script>
 import MdIcon from '@mand-mobile/icon/index';
+
 export default {
   name: 'Keyboard',
   components: {
     [MdIcon.name]: MdIcon
+  },
+  props: {
+    //
   },
   data() {
     return {
@@ -51,7 +55,8 @@ export default {
       }
       this.password.push(digit + '');
       if (this.password.length === 6) {
-        this.$emit('dial-done', this.password.join(''));
+        const password = this.password.join('');
+        this.$emit('dial-done', password);
       }
     },
     backspace() {
@@ -59,6 +64,9 @@ export default {
         return;
       }
       this.password.pop();
+    },
+    clear() {
+      this.password = [];
     }
   }
 };
@@ -102,7 +110,7 @@ export default {
         font-size 12px
         text-decoration none
   .safe-keyboard
-    height 262px
+    height 252px
     border-top 1px solid #eaeaea
     background #fff
   .safe-keyboard-banner

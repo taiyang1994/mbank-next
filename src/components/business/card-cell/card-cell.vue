@@ -1,103 +1,119 @@
 <template>
-  <div id="accountBox" :class="['card-cell', {'single-line': singleLineLayout, interactive: switchable}]"
-    @click="showPicker">
-    <div class="card-cell-logo">
-      <template v-if="selectedCard.bankLogoSrc">
-        <img id="imageLogo" :src="selectedCard.bankLogoSrc" alt="">
-      </template>
-      <template v-else>
-        <md-icon name="bsb-logo" :size="singleLineLayout ? 'sm' : 'lg'" />
-      </template>
-    </div>
-    <div class="card-cell-content">
-      <!--layout 1-->
-      <template v-if="layout === 'full'">
-        <div class="content-row">
-          <div class="content-cell">{{accountTitle}}</div>
-          <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
-            </span>&nbsp;尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
-          </div>
-        </div>
-        <div class="content-row">
-          <template v-if="isIncomeAmountView">
-            <div class="content-cell">{{incomeAmountTitle}}</div>
+  <div>
+    <div id="accountBox" :class="['card-cell', {
+      'single-line': singleLineLayout,
+      interactive: switchable
+    }]" @click="showPicker">
+      <div class="card-cell-logo">
+        <template v-if="selectedCard.bankLogoSrc">
+          <img id="imageLogo" :src="selectedCard.bankLogoSrc" alt="" :width="singleLineLayout ? '28px' : '40px'">
+        </template>
+        <template v-else>
+          <md-icon name="bsb-logo" :size="singleLineLayout ? 'sm' : 'lg'" />
+        </template>
+      </div>
+      <div class="card-cell-content">
+        <!--layout full-->
+        <template v-if="layout === 'full'">
+          <div class="content-row">
+            <div class="content-cell">{{accountTitle}}</div>
             <div class="content-cell">
-              <span class="card-cell-amount">{{incomeAmount}}</span><span>
-                {{incomeAmountUnit || defaultAmoutUnit}}</span>
+            <span v-if="getCardTypeText(selectedCard)" id="bankName">{{getCardTypeText(selectedCard)}}&nbsp;
+            </span>尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
             </div>
-          </template>
-          <template v-else>
-            <div class="content-cell">{{isAvailableBalanceView ? availableBalanceText : balanceText}}</div>
-            <div class="content-cell">
+          </div>
+          <div class="content-row">
+            <template v-if="isIncomeAmountView">
+              <div class="content-cell">{{incomeAmountTitle}}</div>
+              <div class="content-cell">
+                <span class="card-cell-amount">{{incomeAmount}}</span><span>
+                {{incomeAmountUnit || defaultAmoutUnit}}</span>
+              </div>
+            </template>
+            <template v-else>
+              <div class="content-cell">
+                <template v-if="getCardTypeAlias(selectedCard) === 'CreditCard'">
+                  可用额度
+                </template>
+                <template v-else>
+                  {{!isAccountBalanceView ? balanceText : accountBalanceText}}
+                </template>
+              </div>
+              <div class="content-cell">
               <span id="accountBalance" class="card-cell-amount">
-                {{(isAvailableBalanceView
+                {{(!isAccountBalanceView
                     ? selectedCard.availableBalance
                     : selectedCard.balance
                   ) | formatNumber(2, '--')}}
               </span><span>{{selectedCard.unit || defaultAmoutUnit}}</span>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!--layout compact-display-->
+        <template v-if="layout === 'compact-display'">
+          <div class="content-row"><div class="content-cell">
+            <span id="bankName">{{getCardTypeText(selectedCard)}}</span>
+          </div></div>
+          <div class="content-row"><div class="content-cell">{{selectedCard.cardNo | cardNumberMask}}</div></div>
+        </template>
+
+        <!--layout compact-action-->
+        <template v-if="layout === 'compact-action'">
+          <div class="content-row"><div class="content-cell">{{accountTitle}}</div></div>
+          <div class="content-row">
+            <div class="content-cell">
+            <span v-if="getCardTypeText(selectedCard)" id="bankName">{{getCardTypeText(selectedCard)}}&nbsp;
+            </span>尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
             </div>
-          </template>
-        </div>
-      </template>
+          </div>
+        </template>
 
-      <!--layout 2-->
-      <template v-if="layout === 'compact-display'">
-        <div class="content-row"><div class="content-cell">
-          <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}</span>
-        </div></div>
-        <div class="content-row"><div class="content-cell">{{selectedCard.cardNo | cardNumberMask}}</div></div>
-      </template>
+        <!--layout compact-action-display-->
+        <template v-if="layout === 'compact-action-display'">
+          <div class="content-row"><div class="content-cell">{{accountTitle}}</div></div>
+          <div class="content-row"><div class="content-cell">{{selectedCard.cardNo | cardNumberMask}}</div></div>
+        </template>
 
-      <!--layout 3-->
-      <template v-if="layout === 'compact-action'">
-        <div class="content-row"><div class="content-cell">{{actionTitle}}</div></div>
-        <div class="content-row">
-          <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
-            </span> 尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
+        <!--layout simple-->
+        <template v-if="layout === 'simple'">
+          <div class="content-row spacing-between">
+            <div class="content-cell"><span id="bankName">{{getCardTypeText(selectedCard)}}</span></div>
+            <div class="content-cell">
+              尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
+            </div>
           </div>
-        </div>
-      </template>
+        </template>
 
-      <!--layout 4-->
-      <template v-if="layout === 'simple'">
-        <div class="content-row spacing-between">
-          <div class="content-cell">
-            {{selectedCard.bankName || defaultBankName}}<span id="bankName">
-              {{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
-          </span>
+        <!--layout simple-display-->
+        <template v-if="layout === 'simple-display'">
+          <div class="content-row spacing-between">
+            <div class="content-cell">
+              <span id="bankName">{{getCardTypeText(selectedCard)}}</span>
+            </div>
+            <div class="content-cell">
+              {{selectedCard.cardNo | cardNumberMask}}
+            </div>
           </div>
-          <div class="content-cell">
-            尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
-          </div>
-        </div>
-      </template>
+        </template>
 
-      <!--layout 5-->
-      <template v-if="layout === 'simple-display'">
-        <div class="content-row spacing-between">
-          <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}</span>
+        <!--layout mini-->
+        <template v-if="layout === 'mini'">
+          <div class="content-row">
+            <div class="content-cell">
+            <span v-if="getCardTypeText(selectedCard)" id="bankName">{{getCardTypeText(selectedCard)}}&nbsp;
+            </span>尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
+            </div>
           </div>
-          <div class="content-cell">
-            {{selectedCard.cardNo | cardNumberMask}}
-          </div>
-        </div>
-      </template>
-
-      <!--layout 6-->
-      <template v-if="layout === 'mini'">
-        <div class="content-row">
-          <div class="content-cell">
-            <span id="bankName">{{selectedCard.cardTypeName || getCardTypeText(selectedCard.cardType)}}
-            </span> 尾号<span id="accountTail4">{{selectedCard.cardNo | cardSuffix4}}</span>
-          </div>
-        </div>
-      </template>
+        </template>
+      </div>
+      <div v-if="switchable" class="card-cell-arrow">
+        <md-icon name="arrow-right" size="xs" />
+      </div>
     </div>
-    <div v-if="switchable" class="card-cell-arrow">
-      <md-icon name="arrow-right" size="xs" />
+    <div v-if="isChargeHintShow" class="card-cell-charge-hint">
+      <span>可用额度不足？</span><a @click="$emit('charge', selectedCard)">立即充值</a>
     </div>
   </div>
 </template>
@@ -161,9 +177,15 @@ export default {
      * | 储蓄卡 尾号8888          |
      * ---------------------------
      *
+     * compact-action-display
+     * ---------------------------
+     * | 赎回至                   |
+     * | 8888 **** **** 8888     |
+     * ---------------------------
+     *
      * simple
      * ---------------------------
-     * | 包商银行储蓄卡   尾号8888 |
+     * | 储蓄卡           尾号8888 |
      * ---------------------------
      *
      * simple-display
@@ -187,10 +209,10 @@ export default {
       default: '交易账户'
     },
 
-    // 余额显示为可用余额，默认账户余额
-    isAvailableBalanceView: {
+    // 余额显示为账户余额，默认可用余额
+    isAccountBalanceView: {
       type: Boolean,
-      default: true
+      default: false
     },
 
     // 资金流入时使用，不显示卡相关金额，显示外部传入金额
@@ -200,13 +222,13 @@ export default {
     },
 
     // 账户余额显示文案
-    balanceText: {
+    accountBalanceText: {
       type: String,
       default: '账户余额'
     },
 
     // 可用余额显示文案
-    availableBalanceText: {
+    balanceText: {
       type: String,
       default: '可用余额'
     },
@@ -229,17 +251,11 @@ export default {
       default: defaultAmoutUnit
     },
 
-    // compact-action时的操作标题
-    actionTitle: {
-      type: String,
-      default: '赎回至'
-    },
-
     /**
      * 数据
      * @type string cardNo 卡号
-     * @type string balance 账户余额
-     * @type string availableBalance 可用余额
+     * @type string balance 可用余额
+     * @type string accountBalance 可用余额
      * @type number cardType 1储蓄卡 2II类卡 3III类卡
      * @type string unit 金额单元默认元
      * @type string bankName 银行名称默认包商银行
@@ -254,6 +270,12 @@ export default {
     selectedCardNo: {
       type: String,
       default: ''
+    },
+
+    // 不显示二三类户充值提示
+    hasNotChargeHint: {
+      type: Boolean,
+      default: false
     },
 
     // picker压屏背景原生头高度
@@ -283,6 +305,10 @@ export default {
         return this.list[0];
       }
       return this.list.find(card => (card.cardNo === this.cardNo));
+    },
+    isChargeHintShow() {
+      const cardType = this.getCardTypeAlias(this.selectedCard);
+      return this.layout === 'full' && !this.hasNotChargeHint && ['IIClassCard', 'IIIClassCard'].includes(cardType);
     }
   },
   methods: {
@@ -317,17 +343,36 @@ export default {
         this.$emit('selected', data);
       }, {
         ...this.pickerOptions,
-        hideCallback: () => {
+        maskClickCallback: () => {
+          this.$emit('cancel');
+        },
+        cancelClickCallback: () => {
           this.$emit('cancel');
         }
       });
     },
-    setAvailableBalance(cardNo, amount) {
+    setAvailableBalance(cardNo, availableBalance) {
       const index = this.list.findIndex(card => (card.cardNo === cardNo));
-      this.$set(this.list, index, {...this.list[index], availableBalance: amount});
+      this.$set(this.list, index, {...this.list[index], availableBalance});
     },
-    getCardTypeText(cardType) {
-      return filters.cardTypeText(cardType);
+    setBalanceUnit(cardNo, unit) {
+      const index = this.list.findIndex(card => (card.cardNo === cardNo));
+      this.$set(this.list, index, {...this.list[index], unit});
+    },
+    getCardTypeText(card) {
+      if (card.cardTypeName) {
+        return card.cardTypeName;
+      }
+      if (card.cardType) {
+        return filters.cardTypeText(card.cardType);
+      }
+      return '';
+    },
+    getCardTypeAlias(card) {
+      if (card.cardType) {
+        return filters.cardTypeAlias(card.cardType);
+      }
+      return '';
     }
   }
 };
@@ -386,4 +431,15 @@ export default {
       width 20px
       height 20px
       color #c8c8c8
+
+  .card-cell-charge-hint
+    height 32px
+    line-height 32px
+    font-size 13px
+    padding-left 16px
+    span
+      color #F13030
+    a, a:hover, a:active, a:focus, a:visited
+      color #3264CC
+      text-decoration none
 </style>

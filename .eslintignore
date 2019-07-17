@@ -44,3 +44,4 @@ webpack.*
 src/components/mand-mobile/**
 src/components/cube-ui/**
 src/components/business/picker/**
+src/App.vue
